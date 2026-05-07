@@ -42,6 +42,9 @@ typedef struct VectorPtr
     void** capacityEnd;
 } VectorPtr;
 
+/*
+* Simple little plain old data vector...
+*/
 typedef struct PodVectorPtr
 {
     uint32_t capacity;

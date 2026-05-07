@@ -14,7 +14,7 @@ static fn_house_button_can_activate g_origHouseButtonCanActivate = NULL;
 
 /* 
 * HouseButton activation gate can return false if we have a blocker, 
-* just bypass that gate so we don't allow the cat menu to fuck us over...
+* just bypass that gate so we don't allow the CatMenu to fuck us over...
 */
 static uint8_t __fastcall HookHouseButtonCanActivate(void* houseButton, int32_t buttonIndex, uint8_t strictMouse)
 {

@@ -24,8 +24,9 @@ static int IsRecordedButtonAliveForNode(const SetupRecord* record, void* manager
     result = 0;
 
     __try
-    {
-        result = record->manager == manager && record->rootNode == rootNode && record->buttonNode == buttonNode && *(void**)((uint8_t*)record->button + OFF_HOUSE_BUTTON_MANAGER) == manager && *(void**)((uint8_t*)record->button + OFF_HOUSE_BUTTON_NODE) == buttonNode; // Confirms the cached HouseButton still belongs to this manager/node pair.
+    { 
+        // (Confirms the cached HouseButton still belongs to this manager/node pair)...
+        result = record->manager == manager && record->rootNode == rootNode && record->buttonNode == buttonNode && *(void**)((uint8_t*)record->button + OFF_HOUSE_BUTTON_MANAGER) == manager && *(void**)((uint8_t*)record->button + OFF_HOUSE_BUTTON_NODE) == buttonNode;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
