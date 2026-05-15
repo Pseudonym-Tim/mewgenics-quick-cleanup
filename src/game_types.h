@@ -59,6 +59,7 @@ typedef struct SetupRecord
     void* rootNode;
     void* buttonNode;
     void* button;
+    uint8_t deadCatsOnlyLabelActive;
 } SetupRecord;
 
 #endif

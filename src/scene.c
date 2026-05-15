@@ -371,8 +371,70 @@ static uint32_t TeardownDeadHouseCat(void* houseCat, fn_house_cat_teardown house
     return 1U;
 }
 
+static uint32_t RecordOrganGrinderCatDonationReward(void)
+{
+    UINT_PTR gameBase;
+    void* mewDirector;
+    void* globalProgressionData;
+    fn_global_progression_add_npc_donation addNpcDonation;
+
+    if (!g_mj.GetGameBase)
+    {
+        return 0U;
+    }
+
+    gameBase = g_mj.GetGameBase();
+
+    if (!gameBase)
+    {
+        return 0U;
+    }
+
+    mewDirector = GetMewDirectorSingleton();
+
+    if (!mewDirector)
+    {
+        return 0U;
+    }
+
+    globalProgressionData = NULL;
+
+    __try
+    {
+        globalProgressionData = *(void**)((uint8_t*)mewDirector + OFF_MEWDIRECTOR_GLOBAL_PROGRESSION);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        globalProgressionData = NULL;
+    }
+
+    if (!globalProgressionData)
+    {
+        return 0U;
+    }
+
+    addNpcDonation = (fn_global_progression_add_npc_donation)(gameBase + (UINT_PTR)RVA_GLOBAL_PROGRESSION_ADD_NPC_DONATION);
+
+    __try
+    {
+        addNpcDonation(globalProgressionData, NPC_ORGAN_GRINDER, NULL, 1);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        if (g_mj.Log)
+        {
+            g_mj.Log(MOD_NAME, "Exception while counting a dead cat as an Organ Grinder donation reward!");
+        }
+
+        return 0U;
+    }
+
+    return 1U;
+}
+
+
 /* Two-pass: Collect candidates first, then call HouseCat teardown after scan to avoid nasty mid-iteration list mutation... */
-uint32_t RemoveAllDeadCatsInHouse(void)
+uint32_t DonateAllDeadCatsInHouseToOrganGrinder(void)
 {
     UINT_PTR gameBase;
     void* houseScene;
@@ -384,6 +446,7 @@ uint32_t RemoveAllDeadCatsInHouse(void)
     uint32_t aliveCatCount;
     uint32_t deadCatCount;
     uint32_t removeCount;
+    uint32_t donationCount;
 
     if (!g_mj.GetGameBase)
     {
@@ -403,7 +466,7 @@ uint32_t RemoveAllDeadCatsInHouse(void)
     {
         if (g_mj.Log)
         {
-            g_mj.Log(MOD_NAME, "Could not find scene '%s', no dead cats removed!", HOUSE_SCENE_NAME);
+            g_mj.Log(MOD_NAME, "Could not find scene '%s', no dead cats donated!", HOUSE_SCENE_NAME);
         }
 
         return 0U;
@@ -481,19 +544,24 @@ uint32_t RemoveAllDeadCatsInHouse(void)
 
     houseCatTeardown = (fn_house_cat_teardown)(gameBase + (UINT_PTR)RVA_HOUSE_CAT_TEARDOWN);
     removeCount = 0U;
+    donationCount = 0U;
 
     for (index = 0U; index < deadCatCount; ++index)
     {
         if (deadCats[index])
         {
-            removeCount += TeardownDeadHouseCat(deadCats[index], houseCatTeardown);
+            if (TeardownDeadHouseCat(deadCats[index], houseCatTeardown))
+            {
+                ++removeCount;
+                donationCount += RecordOrganGrinderCatDonationReward();
+            }
         }
     }
 
     if (g_mj.Log)
     {
-        g_mj.Log(MOD_NAME, "Dead cat cleanup: Safely tore down %u dead HouseCat scene object(s) through the game's HouseCat teardown path!", removeCount);
+        g_mj.Log(MOD_NAME, "Dead cat cleanup: Safely tore down %u dead HouseCat scene object(s) and counted %u as Organ Grinder cat donation reward(s)!", removeCount, donationCount);
     }
 
-    return removeCount;
+    return donationCount;
 }

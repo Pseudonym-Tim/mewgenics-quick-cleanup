@@ -36,13 +36,13 @@ static int IsRecordedButtonAliveForNode(const SetupRecord* record, void* manager
     return result;
 }
 
-int IsQuickCleanupButton(void* button)
+static SetupRecord* FindLiveSetupRecordForButton(void* button)
 {
     uint32_t index;
 
     if (!button)
     {
-        return 0;
+        return NULL;
     }
 
     for (index = 0U; index < g_setupRecordCount; ++index)
@@ -70,7 +70,7 @@ int IsQuickCleanupButton(void* button)
 
         if (result)
         {
-            return 1;
+            return record;
         }
 
         record->houseStatusUI = NULL;
@@ -78,9 +78,72 @@ int IsQuickCleanupButton(void* button)
         record->rootNode = NULL;
         record->buttonNode = NULL;
         record->button = NULL;
+        record->deadCatsOnlyLabelActive = 0U;
     }
 
-    return 0;
+    return NULL;
+}
+
+int IsQuickCleanupButton(void* button)
+{
+    return FindLiveSetupRecordForButton(button) ? 1 : 0;
+}
+
+int IsDeadCatOnlyCleanupModeActive(void)
+{
+    return (GetAsyncKeyState(VK_SHIFT) & 0x8000) ? 1 : 0;
+}
+
+static void SetQuickCleanupButtonLabelMode(void* button, uint8_t deadCatsOnlyMode)
+{
+    UINT_PTR gameBase;
+    const char* labelKey;
+    const wchar_t* fallbackText;
+    fn_assign_wide_game_string assignWideGameString;
+
+    if (!button || !g_mj.GetGameBase)
+    {
+        return;
+    }
+
+    gameBase = g_mj.GetGameBase();
+
+    if (!gameBase)
+    {
+        return;
+    }
+
+    labelKey = deadCatsOnlyMode ? BUTTON_LABEL_DEAD_CATS_ONLY_LOCALIZATION_KEY : BUTTON_LABEL_LOCALIZATION_KEY;
+    fallbackText = deadCatsOnlyMode ? BUTTON_LABEL_DEAD_CATS_ONLY_FALLBACK_TEXT : BUTTON_LABEL_FALLBACK_TEXT;
+
+    if (!SetButtonLabelFromLocalizationKey(button, labelKey))
+    {
+        assignWideGameString = (fn_assign_wide_game_string)(gameBase + (UINT_PTR)RVA_ASSIGN_WIDE_GAME_STRING);
+        SetButtonLabelInline(button, assignWideGameString, fallbackText);
+    }
+}
+
+void UpdateQuickCleanupButtonLabel(void* button)
+{
+    SetupRecord* record;
+    uint8_t deadCatsOnlyMode;
+
+    record = FindLiveSetupRecordForButton(button);
+
+    if (!record)
+    {
+        return;
+    }
+
+    deadCatsOnlyMode = IsDeadCatOnlyCleanupModeActive() ? 1U : 0U;
+
+    if (record->deadCatsOnlyLabelActive == deadCatsOnlyMode)
+    {
+        return;
+    }
+
+    SetQuickCleanupButtonLabelMode(button, deadCatsOnlyMode);
+    record->deadCatsOnlyLabelActive = deadCatsOnlyMode;
 }
 
 static SetupRecord* FindCurrentSetupRecord(void* manager, void* rootNode, void* buttonNode)
@@ -135,6 +198,7 @@ static void RememberSetup(void* houseStatusUI, void* manager, void* rootNode, vo
     reusableRecord->rootNode = rootNode;
     reusableRecord->buttonNode = buttonNode;
     reusableRecord->button = button;
+    reusableRecord->deadCatsOnlyLabelActive = 0U;
 }
 
 static int BeginSetupGuard(void)

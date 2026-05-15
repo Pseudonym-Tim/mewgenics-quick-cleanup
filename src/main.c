@@ -20,6 +20,7 @@ static uint8_t __fastcall HookHouseButtonCanActivate(void* houseButton, int32_t 
 {
     if (IsQuickCleanupButton(houseButton))
     {
+        UpdateQuickCleanupButtonLabel(houseButton);
         return 1U;
     }
 
@@ -36,15 +37,31 @@ static void __fastcall HookHouseButtonActivate(void* houseButton, uint8_t fromMo
 {
     if (IsQuickCleanupButton(houseButton))
     {
+        int deadCatsOnlyMode;
         uint32_t popCount;
-        uint32_t deadCatCount;
+        uint32_t donatedCatCount;
 
-        popCount = PopAllPoopInHouse();
-        deadCatCount = RemoveAllDeadCatsInHouse();
+        deadCatsOnlyMode = IsDeadCatOnlyCleanupModeActive();
+        UpdateQuickCleanupButtonLabel(houseButton);
+
+        popCount = 0U;
+        donatedCatCount = DonateAllDeadCatsInHouseToOrganGrinder();
+
+        if (!deadCatsOnlyMode)
+        {
+            popCount = PopAllPoopInHouse();
+        }
 
         if (g_mj.Log)
         {
-            g_mj.Log(MOD_NAME, "Button clicked, popped %u poop pickup(s) and removed %u dead cat(s) in the House scene! fromMouse=%u", popCount, deadCatCount, (uint32_t)fromMouse);
+            if (deadCatsOnlyMode)
+            {
+                g_mj.Log(MOD_NAME, "Shift cleanup clicked, donated %u dead cat(s) toward Organ Grinder rewards and left poop untouched in the House scene! fromMouse=%u", donatedCatCount, (uint32_t)fromMouse);
+            }
+            else
+            {
+                g_mj.Log(MOD_NAME, "Button clicked, popped %u poop pickup(s) and donated %u dead cat(s) toward Organ Grinder rewards in the House scene! fromMouse=%u", popCount, donatedCatCount, (uint32_t)fromMouse);
+            }
         }
 
         return;

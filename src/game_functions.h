@@ -24,5 +24,6 @@ typedef void (__fastcall *fn_destroy_wide_game_string)(WideString* value);
 typedef void (__fastcall *fn_pop_poo_pickup)(void* pickupComponent);
 typedef uint8_t (__fastcall *fn_house_cat_is_alive)(void* houseCat);
 typedef void (__fastcall *fn_house_cat_teardown)(void* houseCat);
+typedef void (__fastcall *fn_global_progression_add_npc_donation)(void* globalProgressionData, int32_t npc, void* donationData, int32_t amount);
 
 #endif
